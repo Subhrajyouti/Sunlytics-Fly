@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 
 API_KEY = "fKumsKDJAjMChPzyFgdd1QFU2L8Js8Pqn7BdfzUo"
 EMAIL = "mahantasubhra243@gmail.com"
-BASE_CSV_URL = "https://developer.nrel.gov/api/nsrdb/v2/solar/himawari-tmy-download.csv"
+BASE_CSV_URL = "https://developer.nrel.gov/api/nsrdb/v2/solar/suny-india-download.csv"
 
 LIFETIME_YEARS = 25
 DEGRADATION_RATE = 0.008
@@ -23,23 +23,29 @@ DISCOUNT_RATE = 0.08
 EMISSION_FACTOR = 0.82
 TREE_CO2_PER_YEAR = 10.0
 
-def download_himawari_tmy(lat, lon):
+def download_suny_india(lat, lon,
+                        year="2014",
+                        interval=60,
+                        attributes="air_temperature,ghi,dni,dhi,wind_speed"):
     wkt = f"POINT({lon} {lat})"
     params = {
-        "api_key": API_KEY,
-        "email": EMAIL,
-        "wkt": wkt,
-        "names": "tmy-2020",
-        "attributes": "air_temperature,ghi,dni,dhi,wind_speed",
-        "utc": "false",
-        "leap_day": "false",
-        "interval": "60"
+        "api_key":    API_KEY,
+        "email":      EMAIL,
+        "wkt":        wkt,
+        "names":      year,
+        "attributes": attributes,
+        "utc":        "false",
+        "leap_day":   "false",
+        "interval":   str(interval),
     }
     url = BASE_CSV_URL + "?" + urlencode(params)
     meta = pd.read_csv(url, nrows=1)
     elev = float(meta["Elevation"].iloc[0])
-    df = pd.read_csv(url, skiprows=2)
-    df.index = pd.date_range(start="1/1/2020", periods=len(df), freq="60Min")
+    df   = pd.read_csv(url, skiprows=2)
+    idx  = pd.date_range(start=f"1/1/{year} 00:00",
+                         periods=len(df),
+                         freq=f"{interval}Min")
+    df.index = idx
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
     if "temperature" in df.columns:
         df.rename(columns={"temperature": "temp_air"}, inplace=True)
@@ -74,7 +80,7 @@ def estimate_yield_per_kwp(lat, lon):
     mc = ModelChain(system, location, dc_model="pvwatts", ac_model="pvwatts", aoi_model="ashrae")
     mc.run_model(tmy)
     ac = mc.results.ac
-    annual_kwh = ac.sum() / 1000.0
+    annual_kwh = (ac.sum() / 1000.0)*1.061
     dc_capacity_kwp = (module_params["pdc0"] * 2) / 1000.0
     return annual_kwh
 
