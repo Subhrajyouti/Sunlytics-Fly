@@ -52,7 +52,7 @@ def download_suny_india(lat, lon,
     return df, elev
 
 def estimate_yield_per_kwp(lat, lon):
-    tmy, elev = download_himawari_tmy(lat, lon)
+    tmy, elev = download_suny_india(lat, lon)
 
     module_params = {
         "pdc0": 550,
