@@ -16,4 +16,4 @@ EXPOSE 8000
 
 # 6. Start Uvicorn, reading $PORT (set by Fly)
 #    Shell form expands $PORT correctly
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD ["uvicorn","main:app","--host","0.0.0.0","--port","8000"]
